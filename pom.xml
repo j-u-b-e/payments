@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.jube.payment</groupId>
+    <artifactId>payment-service</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>payment-service</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <sparkjava.spark-core.version>2.5.4</sparkjava.spark-core.version>
+        <google.code.gson.version>2.8.0</google.code.gson.version>
+        <db.url>jdbc:h2:file:${project.basedir}/src/main/resources/h2/revolut</db.url>
+        <db.username>sa</db.username>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>${sparkjava.spark-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${google.code.gson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>3.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.197</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.3.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>3.0</version>
+
+                <!-- Note that we're executing the Flyway plugin in the "generate-sources" phase -->
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>migrate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <!-- Note that we need to prefix the db/migration path with filesystem: to prevent Flyway
+                     from looking for our migration scripts only on the classpath -->
+                <configuration>
+                    <url>${db.url}</url>
+                    <user>${db.username}</user>
+                    <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Use org.jooq            for the Open Source Edition
+                         org.jooq.pro        for commercial editions,
+                         org.jooq.pro-java-8 for commercial editions with Java 8 support,
+                         org.jooq.pro-java-6 for commercial editions with Java 6 support,
+                         org.jooq.trial      for the free trial edition
+
+                     Note: Only the Open Source Edition is hosted on Maven Central.
+                           Import the others manually from your distribution -->
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>3.12.3</version>
+
+                <!-- The jOOQ code generation plugin is also executed in the generate-sources phase, prior to compilation -->
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <!-- This is a minimal working configuration. See the manual's section about the code generator for more details -->
+                <configuration>
+                    <jdbc>
+                        <url>${db.url}</url>
+                        <user>${db.username}</user>
+                    </jdbc>
+                    <generator>
+                        <database>
+                            <includes>.*</includes>
+                            <inputSchema>REVOLUT</inputSchema>
+                        </database>
+                        <target>
+                            <packageName>org.jooq.example.flyway.db.h2</packageName>
+                            <directory>target/generated-sources/jooq-h2</directory>
+                        </target>
+                    </generator>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.jube.payment.Application</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>payment-service-${project.version}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
